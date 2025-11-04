@@ -1,1 +1,5 @@
-pip install python-pptx
+
+Modules necessary to download before running the project:
+
+-> pip install python-pptx
+-> pip install pymupdf
