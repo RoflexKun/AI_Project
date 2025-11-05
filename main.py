@@ -22,8 +22,9 @@ if __name__ == '__main__':
     # NLP Question/Answer integration
     output_folder = script_path[: script_path.rfind('\\')] + '\\output'
     nlp_qa = NLPQuestionAnswer(output_folder)
-    parsed_data = nlp_qa.parse_text_files()
+    parsed_data = nlp_qa.parse_text_files()  # list of (keyword, question, [strategies])
     questions = nlp_qa.generate_questions(parsed_data)
+    strategies_list = [strategies for _, _, strategies in parsed_data]
     print('Generated Questions:')
     for q in questions:
         print('-', q)
@@ -35,5 +36,5 @@ if __name__ == '__main__':
     # score = nlp_qa.verify_answer(question, user_answer, reference_answer)
     # print(f'Similarity score: {score:.2f}')
 
-    main_window = GUI.main_window.Ui_main_window(questions=questions, nlp_qa=nlp_qa, parsed_data=parsed_data)
+    main_window = GUI.main_window.Ui_main_window(questions=questions, nlp_qa=nlp_qa, strategies_list=strategies_list)
     main_window.start_window()
