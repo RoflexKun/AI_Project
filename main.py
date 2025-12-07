@@ -1,6 +1,5 @@
-
 import os
-
+import random
 
 import GUI.main_window
 import tools.file_parser
@@ -30,13 +29,40 @@ if __name__ == '__main__':
         print(f"\n>>> TEST {i}")
 
         try:
-            question, answer = q_gen.generate_random_question()
+            # Now we unpack 3 values: question, correct answer, and the list of wrong answers
+            question, correct_ans, wrong_answers = q_gen.generate_random_question()
+            options = wrong_answers + [correct_ans]
+            random.shuffle(options)
 
             print(f"INTREBARE GENERATĂ:\n{question}")
-            print(f"\nRĂSPUNS CALCULAT:\n{answer}")
+
+            labels = ['a', 'b', 'c', 'd']
+            correct_label = None
+
+            for idx, option in enumerate(options):
+                current_label = labels[idx]
+                print(f"   {current_label}) {option}")
+
+                # Identify which label holds the correct answer
+                if option == correct_ans:
+                    correct_label = current_label
+
+                # 5. Get User Input
+            user_choice = input("\nYour choice (a/b/c/d): ").strip().lower()
+
+            # 6. Validate and Show Result
+            if user_choice == correct_label:
+                print(f"\n✅ CORRECT! The answer is indeed: {correct_ans}")
+            else:
+                print(f"\n❌ WRONG. You chose '{user_choice}'.")
+                print(f"   The correct answer was '{correct_label}': {correct_ans}")
+
+            input("\nPress Enter to continue to the next question...")
 
         except Exception as e:
             print(f"A apărut o eroare la generare: {e}")
+            import traceback
+            traceback.print_exc()
 
         print("-" * 60)
 

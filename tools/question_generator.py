@@ -33,7 +33,10 @@ class QuestionGenerator:
         question_text = raw_text.format(problem_name=problem)
         answer_text = self.strategy_answers[problem]
 
-        return question_text, answer_text
+        # Generate 3 false answers by selecting all answers that are NOT the correct one
+        wrong_answers = [v for k, v in self.strategy_answers.items() if k != problem]
+
+        return question_text, answer_text, wrong_answers
 
     def _gen_nash(self):
         template_obj = random.choice(self.templates['nash_equilibrium'])
@@ -65,5 +68,29 @@ class QuestionGenerator:
         else:
             ans = "Pure Nash Equilibria: " + ", ".join(equilibria)
 
+        # Generate 3 unique false answers
+        possible_fakes = [
+            "No pure Nash equilibrium exists.",
+            "Pure Nash Equilibria: (A:Up, B:Left)",
+            "Pure Nash Equilibria: (A:Up, B:Right)",
+            "Pure Nash Equilibria: (A:Down, B:Left)",
+            "Pure Nash Equilibria: (A:Down, B:Right)",
+            "Pure Nash Equilibria: (A:Up, B:Left), (A:Down, B:Right)",
+            "Pure Nash Equilibria: (A:Up, B:Right), (A:Down, B:Left)"
+        ]
+
+        wrong_answers = []
+        attempts = 0
+        while len(wrong_answers) < 3 and attempts < 50:
+            fake = random.choice(possible_fakes)
+            # Ensure the fake answer is not the correct one and hasn't been added yet
+            if fake != ans and fake not in wrong_answers:
+                wrong_answers.append(fake)
+            attempts += 1
+
+        # Fallback in case we didn't find 3 distinct ones (rare)
+        while len(wrong_answers) < 3:
+            wrong_answers.append("No pure Nash equilibrium exists.")
+
         question_text = raw_text.format(matrix_representation=matrix_str)
-        return question_text, ans
+        return question_text, ans, wrong_answers
