@@ -1,0 +1,22 @@
+{
+  "strategy": [
+    {
+      "template": "Considering the {problem_name} problem and a specific instance of it, what is the most suitable search strategy among those mentioned in the course?",
+      "type": "text_based"
+    },
+    {
+      "template": "Which of the studied strategies (Backtracking, A*, MinMax, etc.) applies most efficiently to the {problem_name} problem?",
+      "type": "text_based"
+    }
+  ],
+  "nash_equilibrium": [
+    {
+      "template": "For the game given in normal form (in the matrix below), does a pure Nash equilibrium exist? If so, what is it?\n\n{matrix_representation}",
+      "type": "logic_matrix"
+    },
+    {
+      "template": "Analyze the payoff matrix below. Identify any pure Nash Equilibria present in this game.\n\n{matrix_representation}",
+      "type": "logic_matrix"
+    }
+  ]
+}

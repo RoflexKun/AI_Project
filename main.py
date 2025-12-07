@@ -5,6 +5,7 @@ import os
 import GUI.main_window
 import tools.file_parser
 from tools.nlp_question_answer import NLPQuestionAnswer
+from tools.question_generator import QuestionGenerator
 
 script_path = os.path.abspath(__file__)
 
@@ -18,6 +19,27 @@ if __name__ == '__main__':
     file_parser = tools.file_parser.FileParser(resources_path + '\\courses')
     file_parser.create_output_directory(script_path)
     file_parser.parse_files()
+
+    # Testing QuestionGenerator (Text Only)
+    q_gen = QuestionGenerator(resources_path)
+    print("\n" + "=" * 60)
+    print(" TESTARE GENERARE INTREBARI (MODE: TEXT-ONLY)")
+    print("=" * 60)
+
+    for i in range(1, 6):
+        print(f"\n>>> TEST {i}")
+
+        try:
+            question, answer = q_gen.generate_random_question()
+
+            print(f"INTREBARE GENERATĂ:\n{question}")
+            print(f"\nRĂSPUNS CALCULAT:\n{answer}")
+
+        except Exception as e:
+            print(f"A apărut o eroare la generare: {e}")
+
+        print("-" * 60)
+
 
     # NLP Question/Answer integration
     output_folder = script_path[: script_path.rfind('\\')] + '\\output'
