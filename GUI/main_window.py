@@ -1,101 +1,185 @@
 import tkinter as tk
+from tkinter import font
+import random
 
-
-class Ui_main_window():
+class Ui_main_window:
     def __init__(self, questions=None, nlp_qa=None, strategies_list=None):
         self.root = tk.Tk()
         self.root.geometry('1280x720')
         self.root.resizable(False, False)
         self.root.title('AI Quiz Maker')
-        self.root.configure(bg='light blue')
+        
+        # Modern gradient background
+        self.root.configure(bg='#0f172a')
 
         self.questions = questions or []
+        self.nlp_qa = nlp_qa
+        self.strategies_list = strategies_list or []
         self.current_question_idx = 0
         self.user_answer = tk.StringVar()
         self.feedback_var = tk.StringVar()
-        self.nlp_qa = nlp_qa
-        self.strategies_list = strategies_list or []
+        self.mc_var = tk.StringVar()
+        self.mc_buttons = []
 
-        title_label = tk.Label(self.root,
-                              text='AI Quiz Maker',
-                              bg='light blue',
-                              fg='gray',
-                              font=('Arial', 25))
-        title_label.place(relx=0.5, rely=0.05, anchor='n')
+        # ❗ NEW — Liste filtrate, doar MCQ
+        self.display_questions = [q for q in self.questions if isinstance(q, tuple)]
+        self.user_answers = [None] * len(self.display_questions)
 
-        self.question_label = tk.Label(self.root, text='', bg='light blue', fg='black', font=('Arial', 18), wraplength=1000, justify='center')
-        self.question_label.place(relx=0.5, rely=0.2, anchor='n')
+        # Modern Fonts
+        self.title_font = font.Font(family="Segoe UI", size=32, weight="bold")
+        self.question_font = font.Font(family="Segoe UI", size=16)
+        self.option_font = font.Font(family="Segoe UI", size=13)
+        self.feedback_font = font.Font(family="Segoe UI", size=18, weight="bold")
+        self.counter_font = font.Font(family="Segoe UI", size=13)
 
-        self.answer_entry = tk.Entry(self.root, textvariable=self.user_answer, font=('Arial', 16), width=80)
-        self.answer_entry.place(relx=0.5, rely=0.4, anchor='n')
+        # Header Frame
+        header_frame = tk.Frame(self.root, bg='#1e293b')
+        header_frame.place(relx=0, rely=0, relwidth=1, relheight=0.12)
 
-        # Navigation and submit buttons on the same line
-        self.prev_btn = tk.Button(self.root, text='Previous', font=('Arial', 12), command=self.prev_question)
-        self.prev_btn.place(relx=0.32, rely=0.45, anchor='n')
+        # Title
+        title_label = tk.Label(header_frame, text='🎓 AI Quiz Maker',
+                               bg='#1e293b', fg='#60a5fa', font=self.title_font)
+        title_label.place(relx=0.5, rely=0.5, anchor='center')
 
-        self.submit_btn = tk.Button(self.root, text='Submit Answer', font=('Arial', 14), command=self.submit_answer)
-        self.submit_btn.place(relx=0.5, rely=0.45, anchor='n')
+        # Question counter
+        self.counter_label = tk.Label(header_frame, text='', bg='#1e293b', 
+                                     fg='#94a3b8', font=self.counter_font)
+        self.counter_label.place(relx=0.92, rely=0.5, anchor='e')
 
-        self.next_btn = tk.Button(self.root, text='Next', font=('Arial', 12), command=self.next_question)
-        self.next_btn.place(relx=0.68, rely=0.45, anchor='n')
+        # Question Card with shadow
+        self.question_card = tk.Frame(self.root, bg='#1e293b', bd=0, highlightthickness=2, 
+                                     highlightbackground='#334155')
+        self.question_card.place(relx=0.5, rely=0.16, anchor='n', relwidth=0.88, relheight=0.28)
+        
+        self.question_label = tk.Label(self.question_card, text='', bg='#1e293b', fg='#e2e8f0',
+                                        font=self.question_font, wraplength=1050, justify='center')
+        self.question_label.place(relx=0.5, rely=0.5, anchor='center')
 
-        self.feedback_label = tk.Label(self.root, textvariable=self.feedback_var, bg='light blue', fg='green', font=('Arial', 14))
-        self.feedback_label.place(relx=0.5, rely=0.5, anchor='n')
+        # Multiple Choice Frame
+        self.mc_frame = tk.Frame(self.root, bg='#0f172a')
+        self.mc_frame.place(relx=0.5, rely=0.48, anchor='n', relwidth=0.88)
 
-        # Scrollable text widget for correct answer
-        self.answer_frame = tk.Frame(self.root, bg='light blue')
-        self.answer_frame.place(relx=0.5, rely=0.6, anchor='n', relwidth=0.8, relheight=0.25)
-        self.answer_scrollbar = tk.Scrollbar(self.answer_frame)
-        self.answer_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.correct_answer_text = tk.Text(self.answer_frame, wrap=tk.WORD, font=('Arial', 13), height=6, width=100, yscrollcommand=self.answer_scrollbar.set)
-        self.correct_answer_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.answer_scrollbar.config(command=self.correct_answer_text.yview)
-        self.correct_answer_text.config(state=tk.DISABLED)
+        # Entry for NLP (but now skipped)
+        self.answer_entry_frame = tk.Frame(self.root, bg='#1e293b', bd=0, 
+                                          highlightthickness=2, highlightbackground='#334155')
+        self.answer_entry = tk.Entry(self.answer_entry_frame, textvariable=self.user_answer, 
+                                     font=self.option_font, bd=0, 
+                                     bg='#1e293b', fg='#e2e8f0', insertbackground='#60a5fa')
+        self.answer_entry.pack(padx=25, pady=18, fill='x')
+
+        # Feedback Label (with wrap fix)
+        self.feedback_label = tk.Label(
+            self.root,
+            textvariable=self.feedback_var,
+            bg='#0f172a',
+            font=self.feedback_font,
+            fg='#60a5fa',
+            wraplength=1000,
+            justify='center'
+        )
+        self.feedback_label.place(relx=0.5, rely=0.77, anchor='n')
+
+        # Buttons
+        button_frame = tk.Frame(self.root, bg='#0f172a')
+        button_frame.place(relx=0.5, rely=0.90, anchor='center')
+
+        self.prev_btn = tk.Button(button_frame, text='← Previous', font=self.option_font,
+                                  bg='#334155', fg='#e2e8f0', activebackground='#475569',
+                                  activeforeground='white', command=self.prev_question, 
+                                  bd=0, padx=25, pady=12, cursor='hand2', relief='flat')
+        self.prev_btn.pack(side='left', padx=10)
+
+        self.submit_btn = tk.Button(button_frame, text='✓ Submit', font=self.option_font,
+                                    bg='#3b82f6', fg='white', activebackground='#2563eb',
+                                    activeforeground='white', command=self.submit_answer, 
+                                    bd=0, padx=30, pady=12, cursor='hand2', relief='flat')
+        self.submit_btn.pack(side='left', padx=10)
+
+        self.next_btn = tk.Button(button_frame, text='Next →', font=self.option_font,
+                                 bg='#334155', fg='#e2e8f0', activebackground='#475569',
+                                 activeforeground='white', command=self.next_question, 
+                                 bd=0, padx=25, pady=12, cursor='hand2', relief='flat')
+        self.next_btn.pack(side='left', padx=10)
 
         self.update_question()
 
     def update_question(self):
-        if self.questions:
-            self.question_label.config(text=self.questions[self.current_question_idx])
-            self.user_answer.set('')
-            self.feedback_var.set('')
-            self.correct_answer_text.config(state=tk.NORMAL)
-            self.correct_answer_text.delete('1.0', tk.END)
-            self.correct_answer_text.config(state=tk.DISABLED)
-        else:
+        self.feedback_var.set('')
+
+        total = len(self.display_questions)
+        current = self.current_question_idx + 1
+        self.counter_label.config(text=f'Question {current} of {total}')
+
+        # hide NLP entry always (since text Q skipped)
+        self.answer_entry_frame.place_forget()
+
+        # clear MCQ buttons
+        for btn in self.mc_buttons:
+            btn.destroy()
+        self.mc_buttons = []
+
+        if not self.display_questions:
             self.question_label.config(text='No questions available.')
-            self.correct_answer_text.config(state=tk.NORMAL)
-            self.correct_answer_text.delete('1.0', tk.END)
-            self.correct_answer_text.config(state=tk.DISABLED)
+            return
+
+        q = self.display_questions[self.current_question_idx]
+
+        question_text, correct_ans, wrong_answers = q
+        options = wrong_answers + [correct_ans]
+        random.shuffle(options)
+
+        self.question_label.config(text=question_text)
+
+        prev_ans = self.user_answers[self.current_question_idx]
+        self.mc_var.set(prev_ans if prev_ans else '')
+
+        for option in options:
+            self._add_mc_button(option)
+
+    def _add_mc_button(self, option):
+        btn = tk.Radiobutton(
+            self.mc_frame, text=option, variable=self.mc_var, value=option,
+            font=self.option_font, bg='#1e293b', fg='#e2e8f0',
+            anchor='w', justify='left', wraplength=1050,
+            indicatoron=False,
+            selectcolor='#3b82f6',
+            activebackground='#334155',
+            bd=0, relief='flat',
+            padx=20, pady=12,
+            cursor='hand2',
+            highlightthickness=2,
+            highlightbackground='#334155',
+            highlightcolor='#3b82f6'
+        )
+        btn.pack(fill='x', pady=4, padx=5)
+        self.mc_buttons.append(btn)
 
     def submit_answer(self):
-        if not self.questions or not self.strategies_list:
-            self.feedback_var.set('No questions or strategies loaded.')
+        if not self.display_questions:
             return
-        idx = self.current_question_idx
-        user_ans = self.user_answer.get().strip().lower()
-        strategies = [s.lower() for s in self.strategies_list[idx]]
-        got_point = user_ans in strategies
-        if got_point:
-            self.feedback_var.set('Correct! You get a point.')
-        else:
-            self.feedback_var.set('Incorrect. Possible strategies are:')
-        self.correct_answer_text.config(state=tk.NORMAL)
-        self.correct_answer_text.delete('1.0', tk.END)
-        self.correct_answer_text.insert(tk.END, '\n'.join(self.strategies_list[idx]))
-        self.correct_answer_text.config(state=tk.DISABLED)
 
-    def prev_question(self):
-        if self.questions and self.current_question_idx > 0:
-            self.current_question_idx -= 1
+        user_ans = self.mc_var.get()
+        self.user_answers[self.current_question_idx] = user_ans
+
+        _, correct_ans, _ = self.display_questions[self.current_question_idx]
+
+        if user_ans == correct_ans:
+            self.feedback_var.set('✓ Correct! Well done!')
+            self.feedback_label.config(fg='#10b981')
+        else:
+            self.feedback_var.set(f'✗ Incorrect! Correct answer: {correct_ans}')
+            self.feedback_label.config(fg='#ef4444')
+
+    # 🔥 NEW — navighează DOAR prin întrebările MCQ
+    def next_question(self):
+        if self.current_question_idx < len(self.display_questions) - 1:
+            self.current_question_idx += 1
             self.update_question()
 
-    def next_question(self):
-        if self.questions and self.current_question_idx < len(self.questions) - 1:
-            self.current_question_idx += 1
+    def prev_question(self):
+        if self.current_question_idx > 0:
+            self.current_question_idx -= 1
             self.update_question()
 
     def start_window(self):
         self.root.mainloop()
-
-
