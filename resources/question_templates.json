@@ -1,12 +1,12 @@
 {
-  "strategy": [
+  "strategy_simulation": [
     {
-      "template": "Considering the {problem_name} problem and a specific instance of it, what is the most suitable search strategy among those mentioned in the course?",
-      "type": "text_based"
+      "template": "Considering the {problem_name} problem and the following specific instance:\n\n{instance_details}\n\nWhich search strategy among those mentioned in the course is the most suitable for this configuration?",
+      "type": "simulation_based"
     },
     {
-      "template": "Which of the studied strategies (Backtracking, A*, MinMax, etc.) applies most efficiently to the {problem_name} problem?",
-      "type": "text_based"
+      "template": "Analyzing the instance below for the {problem_name} problem:\n\n{instance_details}\n\nComparing the studied strategies (Backtracking, A*, Greedy, etc.), which one is the most efficient for this current state?",
+      "type": "simulation_based"
     }
   ],
   "nash_equilibrium": [
