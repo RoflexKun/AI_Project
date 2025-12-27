@@ -15,9 +15,10 @@ if __name__ == '__main__':
     resources_path = get_resources_path()
 
     # 1️⃣ Parse course files
-    file_parser = tools.file_parser.FileParser(resources_path + '\\courses')
-    file_parser.create_output_directory(os.path.abspath(__file__))
-    file_parser.parse_files()
+    # FOR NOW ITS COMMENTED FOR OPTIMISATION REASONS
+    #file_parser = tools.file_parser.FileParser(resources_path + '\\courses')
+    #file_parser.create_output_directory(os.path.abspath(__file__))
+    #file_parser.parse_files()
 
     # 2️⃣ Generate Multiple Choice Questions
     q_gen = QuestionGenerator(resources_path)

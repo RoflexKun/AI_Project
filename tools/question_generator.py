@@ -230,24 +230,184 @@ class QuestionGenerator:
 
         return instance_str, winner
 
+    def _solve_forward_checking(self, template_text):
+        colors = ['Red', 'Green', 'Blue', 'Yellow', 'Orange', 'Purple', 'Brown']
+
+        number_of_nodes = random.randint(1, 10)
+        number_of_colors = random.randint(1, len(colors))
+
+        nodes_used = set()
+
+        for i in range(number_of_nodes):
+            nodes_used.add(chr(ord('A') + i))
+
+        colors_used = set()
+        while len(colors_used) < number_of_colors:
+            index = random.randint(0, len(colors) - 1)
+            colors_used.add(colors[index])
+
+        nodes_list = sorted(list(nodes_used))
+        colors_list = sorted(list(colors_used))
+
+        edges = []
+        adjacency = {n: [] for n in nodes_list}
+
+        for i in range(len(nodes_list)):
+            for j in range(i + 1, len(nodes_list)):
+                if random.random() > 0.5:
+                    u, v = nodes_list[i], nodes_list[j]
+                    edges.append(f"{u}-{v}")
+                    adjacency[u].append(v)
+                    adjacency[v].append(u)
+
+        edges_str = ", ".join(edges) if edges else "No constraints (Independent variables)"
+
+        nodes_with_neighbors = [n for n in nodes_list if len(adjacency[n]) > 0]
+
+        if nodes_with_neighbors:
+            assigned_node = random.choice(nodes_with_neighbors)
+        else:
+            assigned_node = random.choice(nodes_list)
+
+        assigned_color = random.choice(colors_list)
+
+        instance_details = (
+            f"Variables: {', '.join(nodes_list)}\n"
+            f"Initial Domains: {{{', '.join(colors_list)}}}\n"
+            f"Constraints (Edges): {edges_str}\n"
+            f"Recent Move: Backtracking assigned {assigned_node} = {assigned_color}"
+        )
+
+        full_domain_str = ", ".join(colors_list)
+        reduced_domain_list = [c for c in colors_list if c != assigned_color]
+        reduced_domain_str = ", ".join(reduced_domain_list)
+
+        ans_parts = []
+        remaining_nodes = [n for n in nodes_list if n != assigned_node]
+
+        for n in remaining_nodes:
+            if n in adjacency[assigned_node]:
+                ans_parts.append(f"{n}: {{{reduced_domain_str}}}")
+            else:
+                ans_parts.append(f"{n}: {{{full_domain_str}}}")
+
+        correct_ans = ", ".join(ans_parts)
+
+        wrong_answers = set()
+        attempts = 0
+
+        while len(wrong_answers) < 3 and attempts < 50:
+            current_wrong_parts = []
+            for n in remaining_nodes:
+                chosen_domain = random.choice([full_domain_str, reduced_domain_str])
+                current_wrong_parts.append(f"{n}: {{{chosen_domain}}}")
+
+            wrong_str = ", ".join(current_wrong_parts)
+
+            if wrong_str != correct_ans:
+                wrong_answers.add(wrong_str)
+            attempts += 1
+
+        wrong_answers = list(wrong_answers)
+        while len(wrong_answers) < 3:
+            wrong_answers.append("No domains changed")
+
+        wrong_answers = list(wrong_answers)
+        question_text = template_text.format(instance_details=instance_details)
+
+        return question_text, correct_ans, wrong_answers
+
+
+    def _gen_csp(self):
+        template_obj = random.choice(self.templates['csp_evaluation'])
+        raw_text = template_obj['template']
+
+        if 'Forward Checking' in raw_text:
+            return self._solve_forward_checking(raw_text)
+        else:
+            return self._solve_mrv(raw_text)
+
+    def _solve_mrv(self, template_text):
+        colors = ['Red', 'Green', 'Blue', 'Yellow', 'Orange', 'Purple', 'Brown']
+
+        number_of_nodes = random.randint(1, 10)
+        number_of_colors = random.randint(1, len(colors))
+
+        nodes_used = set()
+
+        for i in range(number_of_nodes):
+            nodes_used.add(chr(ord('A') + i))
+
+        colors_used = set()
+        while len(colors_used) < number_of_colors:
+            index = random.randint(0, len(colors) - 1)
+            colors_used.add(colors[index])
+
+        nodes_list = sorted(list(nodes_used))
+        colors_list = sorted(list(colors_used))
+
+        domain_state = {}
+
+        for node in nodes_list:
+            current_domain_size = random.randint(1, len(colors_list))
+            node_colors = sorted(random.sample(colors_list, current_domain_size))
+            domain_state[node] = node_colors
+
+        display_lines = [f"   Variable {node}: {{{', '.join(cols)}}}" for node, cols in domain_state.items()]
+        random.shuffle(display_lines)
+        instance_details = "Current Domains (after some constraints applied):\n" + "\n".join(display_lines)
+
+        min_len = 100
+        for cols in domain_state.values():
+            if len(cols) < min_len:
+                min_len = len(cols)
+
+        winners = [n for n, cols in domain_state.items() if len(cols) == min_len]
+        winners.sort()
+
+        best_var = winners[0]
+        correct_ans = f"Variable {best_var} (size {min_len})"
+
+        wrong_answers = set()
+        attempts = 0
+
+        while len(wrong_answers) < 3 and attempts < 50:
+            random_node = random.choice(nodes_list)
+            size = len(domain_state[random_node])
+
+            fake_ans = f"Variable {random_node} (size {size})"
+
+            if size > min_len:
+                wrong_answers.add(fake_ans)
+            elif size == min_len and random_node != best_var:
+                wrong_answers.add(f"Variable {random_node} (random choice)")
+
+            attempts += 1
+
+        wrong_answers_list = list(wrong_answers)
+        while len(wrong_answers_list) < 3:
+            wrong_answers_list.append("Any variable (Random selection)")
+
+        wrong_answers_list = list(wrong_answers)[:3]
+        question_text = template_text.format(instance_details=instance_details)
+
+        return question_text, correct_ans, wrong_answers_list
+
+
     def generate_random_question(self):
-        category = random.choice(['strategy_simulation', 'nash_equilibrium'])
+        category = random.choice(['strategy_simulation', 'nash_equilibrium', 'csp_evaluation'])
 
         if category == 'strategy_simulation':
             return self._gen_strategy()
         elif category == 'nash_equilibrium':
             return self._gen_nash()
+        elif category == 'csp_evaluation':
+            return self._gen_csp()
 
     def _generate_wrong_answers(self, problem_answer):
-        wrong_answers = set()
-        while len(wrong_answers) < 3:
-            index = random.randint(0, len(self.all_algorithms_pool)-1)
-            if self.all_algorithms_pool[index] == problem_answer:
-                continue
-            else:
-                wrong_answers.add(self.all_algorithms_pool[index])
 
-        return list(wrong_answers)
+        pool = [algo for algo in self.all_algorithms_pool if algo != problem_answer]
+        return random.sample(pool, min(3, len(pool)))
 
     def _gen_strategy(self):
         template_obj = random.choice(self.templates['strategy_simulation'])
@@ -307,7 +467,7 @@ class QuestionGenerator:
 
         wrong_answers = []
         attempts = 0
-        while len(wrong_answers) < 3:
+        while len(wrong_answers) < 3 and attempts < 100:
             fake = random.choice(possible_fakes)
             # Ensure the fake answer is not the correct one and hasn't been added yet
             if fake != ans and fake not in wrong_answers:

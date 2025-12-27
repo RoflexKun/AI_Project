@@ -49,7 +49,7 @@ class Ui_main_window:
         # Question Card with shadow
         self.question_card = tk.Frame(self.root, bg='#1e293b', bd=0, highlightthickness=2, 
                                      highlightbackground='#334155')
-        self.question_card.place(relx=0.5, rely=0.16, anchor='n', relwidth=0.88, relheight=0.28)
+        self.question_card.place(relx=0.5, rely=0.14, anchor='n', relwidth=0.88, relheight=0.45)
         
         self.question_label = tk.Label(self.question_card, text='', bg='#1e293b', fg='#e2e8f0',
                                         font=self.question_font, wraplength=1050, justify='center')
@@ -57,7 +57,7 @@ class Ui_main_window:
 
         # Multiple Choice Frame
         self.mc_frame = tk.Frame(self.root, bg='#0f172a')
-        self.mc_frame.place(relx=0.5, rely=0.48, anchor='n', relwidth=0.88)
+        self.mc_frame.place(relx=0.5, rely=0.61, anchor='n', relwidth=0.88)
 
         # Entry for NLP (but now skipped)
         self.answer_entry_frame = tk.Frame(self.root, bg='#1e293b', bd=0, 
@@ -77,35 +77,38 @@ class Ui_main_window:
             wraplength=1000,
             justify='center'
         )
-        self.feedback_label.place(relx=0.5, rely=0.77, anchor='n')
 
         # Buttons
         button_frame = tk.Frame(self.root, bg='#0f172a')
-        button_frame.place(relx=0.5, rely=0.90, anchor='center')
+        button_frame.place(relx=0.5, rely=0.97, anchor='s')
 
-        self.prev_btn = tk.Button(button_frame, text='← Previous', font=self.option_font,
+        nav_btn_font = ("Segoe UI", 10, "bold")
+
+        self.prev_btn = tk.Button(button_frame, text='← Previous', font=nav_btn_font,
                                   bg='#334155', fg='#e2e8f0', activebackground='#475569',
                                   activeforeground='white', command=self.prev_question, 
-                                  bd=0, padx=25, pady=12, cursor='hand2', relief='flat')
+                                  bd=0, padx=15, pady=6, cursor='hand2', relief='flat')
         self.prev_btn.pack(side='left', padx=10)
 
-        self.submit_btn = tk.Button(button_frame, text='✓ Submit', font=self.option_font,
+        self.submit_btn = tk.Button(button_frame, text='✓ Submit', font=nav_btn_font,
                                     bg='#3b82f6', fg='white', activebackground='#2563eb',
                                     activeforeground='white', command=self.submit_answer, 
-                                    bd=0, padx=30, pady=12, cursor='hand2', relief='flat')
+                                    bd=0, padx=20, pady=6, cursor='hand2', relief='flat')
         self.submit_btn.pack(side='left', padx=10)
 
-        self.next_btn = tk.Button(button_frame, text='Next →', font=self.option_font,
+        self.next_btn = tk.Button(button_frame, text='Next →', font=nav_btn_font,
                                  bg='#334155', fg='#e2e8f0', activebackground='#475569',
                                  activeforeground='white', command=self.next_question, 
-                                 bd=0, padx=25, pady=12, cursor='hand2', relief='flat')
+                                 bd=0, padx=15, pady=6, cursor='hand2', relief='flat')
         self.next_btn.pack(side='left', padx=10)
 
         self.update_question()
 
     def update_question(self):
+        self.feedback_label.place_forget()
         self.feedback_var.set('')
 
+        self.submit_btn.config(state='normal', bg='#3b82f6')
         total = len(self.display_questions)
         current = self.current_question_idx + 1
         self.counter_label.config(text=f'Question {current} of {total}')
@@ -128,7 +131,14 @@ class Ui_main_window:
         options = wrong_answers + [correct_ans]
         random.shuffle(options)
 
-        self.question_label.config(text=question_text)
+        q_len = len(question_text)
+        q_size = 15
+        if q_len > 400:
+            q_size = 11
+        elif q_len > 200:
+            q_size = 13
+
+        self.question_label.config(text=question_text, font=("Segoe UI", q_size))
 
         prev_ans = self.user_answers[self.current_question_idx]
         self.mc_var.set(prev_ans if prev_ans else '')
@@ -137,21 +147,29 @@ class Ui_main_window:
             self._add_mc_button(option)
 
     def _add_mc_button(self, option):
+        opt_len = len(option)
+        opt_size = 13
+        if opt_len > 150:
+            opt_size = 10
+        elif opt_len > 80:
+            opt_size = 11
+
         btn = tk.Radiobutton(
             self.mc_frame, text=option, variable=self.mc_var, value=option,
-            font=self.option_font, bg='#1e293b', fg='#e2e8f0',
+            font=("Segoe UI", opt_size),
+            bg='#1e293b', fg='#e2e8f0',
             anchor='w', justify='left', wraplength=1050,
             indicatoron=False,
             selectcolor='#3b82f6',
             activebackground='#334155',
             bd=0, relief='flat',
-            padx=20, pady=12,
+            padx=20, pady=8,
             cursor='hand2',
             highlightthickness=2,
             highlightbackground='#334155',
             highlightcolor='#3b82f6'
         )
-        btn.pack(fill='x', pady=4, padx=5)
+        btn.pack(fill='x', pady=2, padx=5)
         self.mc_buttons.append(btn)
 
     def submit_answer(self):
@@ -163,6 +181,7 @@ class Ui_main_window:
 
         _, correct_ans, _ = self.display_questions[self.current_question_idx]
 
+        self.feedback_label.place(relx=0.5, rely=0.88, anchor='s')
         if user_ans == correct_ans:
             self.feedback_var.set('✓ Correct! Well done!')
             self.feedback_label.config(fg='#10b981')

@@ -18,5 +18,15 @@
       "template": "Analyze the payoff matrix below. Identify any pure Nash Equilibria present in this game.\n\n{matrix_representation}",
       "type": "logic_matrix"
     }
+  ],
+  "csp_evaluation": [
+    {
+      "template": "Consider the following CSP (Map Coloring) instance:\n\n{instance_details}\n\nApplying the Forward Checking (FC) optimization, what will be the remaining domains for the neighbors of the assigned variable?",
+      "type": "logic_csp"
+    },
+    {
+      "template": "We have reached an intermediate state in a CSP problem:\n\n{instance_details}\n\nAccording to the MRV (Minimum Remaining Values) heuristic, which variable should be selected next for assignment?",
+      "type": "logic_csp"
+    }
   ]
 }
