@@ -35,6 +35,100 @@ class QuestionGenerator:
             "Backtracking with Forward Checking"
         ]
 
+    def generate_random_question(self):
+        category = random.choice(['strategy_simulation', 'nash_equilibrium', 'csp_evaluation', 'minmax_evaluation'])
+
+        if category == 'strategy_simulation':
+            return self._gen_strategy()
+        elif category == 'nash_equilibrium':
+            return self._gen_nash()
+        elif category == 'csp_evaluation':
+            return self._gen_csp()
+        elif category == 'minmax_evaluation':
+            return self._gen_minmax()
+
+
+    def _gen_minmax(self):
+        template_obj = random.choice(self.templates['minmax_evaluation'])
+        raw_text = template_obj['template']
+
+        config = random.choice([
+            {'depth': 2, 'branching': 3},
+            {'depth': 2, 'branching': 2},
+            {'depth': 3, 'branching': 2},
+        ])
+
+        depth = config['depth']
+        branching = config['branching']
+
+        def build_tree(current_depth):
+            if current_depth == depth:
+                return random.randint(1, 20)
+            else:
+                return [build_tree(current_depth + 1) for _ in range(branching)]
+
+        game_tree = build_tree(0)
+
+        total_leaves_count = branching ** depth
+
+        instance_details = (
+            f"Tree Structure (Nested List): {str(game_tree)}\n"
+            f"Depth: {depth}\n"
+            f"Branching Factor: {branching}"
+        )
+
+        visited_leaves = 0
+
+        def solve_alpha_beta(node, current_depth, is_max, alpha, beta):
+            nonlocal visited_leaves
+
+            if isinstance(node, int):
+                visited_leaves += 1
+                return node
+
+            if is_max:
+                best_val = -float('inf')
+                for child in node:
+                    val = solve_alpha_beta(child, current_depth + 1, False, alpha, beta)
+                    best_val = max(best_val, val)
+                    alpha = max(alpha, best_val)
+
+                    if beta <= alpha:
+                        break
+                return best_val
+            else:
+                best_val = float('inf')
+                for child in node:
+                    val = solve_alpha_beta(child, current_depth + 1, True, alpha, beta)
+                    best_val = min(best_val, val)
+                    beta = min(beta, best_val)
+
+                    if beta <= alpha:
+                        break
+                return best_val
+
+        root_val = solve_alpha_beta(game_tree, 0, True, -float('inf'), float('inf'))
+
+        correct_ans = f"Root: {root_val}, Visited leaves: {visited_leaves}"
+
+        wrong_answers = set()
+        attempts = 0
+
+        while len(wrong_answers) < 3 and attempts < 50:
+            r_val = random.randint(1, 25)
+
+            r_vis = random.randint(1, total_leaves_count)
+
+            candidate = f"Root: {r_val}, Visited leaves: {r_vis}"
+            if candidate != correct_ans:
+                wrong_answers.add(candidate)
+
+            attempts += 1
+
+        wrong_list = list(wrong_answers)
+
+        return raw_text.format(instance_details=instance_details), correct_ans, wrong_list[:3]
+
     def generate_problem_instance(self, problem):
         # --- 1. N-QUEENS (Min-Conflicts vs Random) ---
         if problem == 'n-queens':
@@ -392,17 +486,6 @@ class QuestionGenerator:
         question_text = template_text.format(instance_details=instance_details)
 
         return question_text, correct_ans, wrong_answers_list
-
-
-    def generate_random_question(self):
-        category = random.choice(['strategy_simulation', 'nash_equilibrium', 'csp_evaluation'])
-
-        if category == 'strategy_simulation':
-            return self._gen_strategy()
-        elif category == 'nash_equilibrium':
-            return self._gen_nash()
-        elif category == 'csp_evaluation':
-            return self._gen_csp()
 
     def _generate_wrong_answers(self, problem_answer):
 

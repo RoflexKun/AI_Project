@@ -28,5 +28,11 @@
       "template": "We have reached an intermediate state in a CSP problem:\n\n{instance_details}\n\nAccording to the MRV (Minimum Remaining Values) heuristic, which variable should be selected next for assignment?",
       "type": "logic_csp"
     }
+  ],
+  "minmax_evaluation": [
+    {
+      "template": "For the given tree:\n\n{instance_details}\n\nWhat will be the root value and how many nodes will be visited using the MinMax Strategy with Alpha-Beta optimisation",
+      "type": "logic_minmax"
+    }
   ]
 }
