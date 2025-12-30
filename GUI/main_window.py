@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import font
+from tkinter import font, messagebox
 import random
 
 class Ui_main_window:
@@ -21,8 +21,18 @@ class Ui_main_window:
         self.mc_var = tk.StringVar()
         self.mc_buttons = []
 
-        # ❗ NEW — Liste filtrate, doar MCQ
-        self.display_questions = [q for q in self.questions if isinstance(q, tuple)]
+        # Filter and normalize questions
+        raw_questions = [q for q in self.questions if isinstance(q, tuple)]
+        self.display_questions = []
+        
+        # Ensure every question has 4 elements: (text, correct, wrong_list, explanation)
+        for q in raw_questions:
+            if len(q) == 4:
+                self.display_questions.append(q)
+            elif len(q) == 3:
+                # Add a default explanation if missing
+                self.display_questions.append((q[0], q[1], q[2], "No detailed explanation available for this question."))
+        
         self.user_answers = [None] * len(self.display_questions)
 
         # Modern Fonts
@@ -96,6 +106,12 @@ class Ui_main_window:
                                     bd=0, padx=20, pady=6, cursor='hand2', relief='flat')
         self.submit_btn.pack(side='left', padx=10)
 
+        # Explain Button (Hidden initially)
+        self.explain_btn = tk.Button(button_frame, text='? Explain', font=nav_btn_font,
+                                     bg='#8b5cf6', fg='white', activebackground='#7c3aed',
+                                     activeforeground='white', command=self.show_explanation,
+                                     bd=0, padx=15, pady=6, cursor='hand2', relief='flat')
+
         self.next_btn = tk.Button(button_frame, text='Next →', font=nav_btn_font,
                                  bg='#334155', fg='#e2e8f0', activebackground='#475569',
                                  activeforeground='white', command=self.next_question, 
@@ -107,6 +123,16 @@ class Ui_main_window:
     def update_question(self):
         self.feedback_label.place_forget()
         self.feedback_var.set('')
+        self.explain_btn.pack_forget()
+
+        # Re-pack buttons in order: Prev, Submit, Next (Explain is hidden)
+        self.prev_btn.pack_forget()
+        self.submit_btn.pack_forget()
+        self.next_btn.pack_forget()
+        
+        self.prev_btn.pack(side='left', padx=10)
+        self.submit_btn.pack(side='left', padx=10)
+        self.next_btn.pack(side='left', padx=10)
 
         self.submit_btn.config(state='normal', bg='#3b82f6')
         total = len(self.display_questions)
@@ -125,9 +151,10 @@ class Ui_main_window:
             self.question_label.config(text='No questions available.')
             return
 
+        # Unpack 4 values
         q = self.display_questions[self.current_question_idx]
+        question_text, correct_ans, wrong_answers, explanation = q
 
-        question_text, correct_ans, wrong_answers = q
         options = wrong_answers + [correct_ans]
         random.shuffle(options)
 
@@ -145,6 +172,14 @@ class Ui_main_window:
 
         for option in options:
             self._add_mc_button(option)
+            
+        # If question already answered, show explain and disable submit
+        if prev_ans:
+            self.submit_btn.config(state='disabled', bg='#94a3b8')
+            # Inject Explain button between Submit and Next
+            self.next_btn.pack_forget()
+            self.explain_btn.pack(side='left', padx=10)
+            self.next_btn.pack(side='left', padx=10)
 
     def _add_mc_button(self, option):
         opt_len = len(option)
@@ -177,9 +212,13 @@ class Ui_main_window:
             return
 
         user_ans = self.mc_var.get()
+        if not user_ans:
+            return
+
         self.user_answers[self.current_question_idx] = user_ans
 
-        _, correct_ans, _ = self.display_questions[self.current_question_idx]
+        q = self.display_questions[self.current_question_idx]
+        _, correct_ans, _, _ = q
 
         self.feedback_label.place(relx=0.5, rely=0.88, anchor='s')
         if user_ans == correct_ans:
@@ -188,8 +227,22 @@ class Ui_main_window:
         else:
             self.feedback_var.set(f'✗ Incorrect! Correct answer: {correct_ans}')
             self.feedback_label.config(fg='#ef4444')
+            
+        # Show Explain Button and ensure it is before Next
+        self.next_btn.pack_forget()
+        self.explain_btn.pack(side='left', padx=10)
+        self.next_btn.pack(side='left', padx=10)
 
-    # 🔥 NEW — navighează DOAR prin întrebările MCQ
+    def show_explanation(self):
+        if not self.display_questions:
+            return
+        
+        # Retrieve the explanation string from the tuple
+        q = self.display_questions[self.current_question_idx]
+        _, _, _, explanation = q
+        
+        messagebox.showinfo("Explanation", explanation)
+
     def next_question(self):
         if self.current_question_idx < len(self.display_questions) - 1:
             self.current_question_idx += 1

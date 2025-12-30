@@ -25,9 +25,10 @@ if __name__ == '__main__':
     questions_mc = []
     for _ in range(5):
         try:
-            question, correct_ans, wrong_answers = q_gen.generate_random_question()
-            questions_mc.append((question, correct_ans, wrong_answers))
-        except Exception:
+            question, correct_ans, wrong_answers, explanation = q_gen.generate_random_question()
+            questions_mc.append((question, correct_ans, wrong_answers, explanation))
+        except Exception as e:
+            print(f"Error generating question: {e}")
             continue
 
     # 3️⃣ NLP Question/Answer
