@@ -17,7 +17,6 @@ class Ui_main_window:
         self.strategies_list = strategies_list or []
         self.current_question_idx = 0
         self.user_answer = tk.StringVar()
-        self.feedback_var = tk.StringVar()
         self.mc_var = tk.StringVar()
         self.mc_buttons = []
 
@@ -34,12 +33,13 @@ class Ui_main_window:
                 self.display_questions.append((q[0], q[1], q[2], "No detailed explanation available for this question."))
         
         self.user_answers = [None] * len(self.display_questions)
+        # Store the shuffled order of options for each question so it remains persistent
+        self.shuffled_options = [None] * len(self.display_questions)
 
         # Modern Fonts
         self.title_font = font.Font(family="Segoe UI", size=32, weight="bold")
         self.question_font = font.Font(family="Segoe UI", size=16)
         self.option_font = font.Font(family="Segoe UI", size=13)
-        self.feedback_font = font.Font(family="Segoe UI", size=18, weight="bold")
         self.counter_font = font.Font(family="Segoe UI", size=13)
 
         # Header Frame
@@ -77,17 +77,6 @@ class Ui_main_window:
                                      bg='#1e293b', fg='#e2e8f0', insertbackground='#60a5fa')
         self.answer_entry.pack(padx=25, pady=18, fill='x')
 
-        # Feedback Label (with wrap fix)
-        self.feedback_label = tk.Label(
-            self.root,
-            textvariable=self.feedback_var,
-            bg='#0f172a',
-            font=self.feedback_font,
-            fg='#60a5fa',
-            wraplength=1000,
-            justify='center'
-        )
-
         # Buttons
         button_frame = tk.Frame(self.root, bg='#0f172a')
         button_frame.place(relx=0.5, rely=0.97, anchor='s')
@@ -121,8 +110,6 @@ class Ui_main_window:
         self.update_question()
 
     def update_question(self):
-        self.feedback_label.place_forget()
-        self.feedback_var.set('')
         self.explain_btn.pack_forget()
 
         # Re-pack buttons in order: Prev, Submit, Next (Explain is hidden)
@@ -155,8 +142,15 @@ class Ui_main_window:
         q = self.display_questions[self.current_question_idx]
         question_text, correct_ans, wrong_answers, explanation = q
 
-        options = wrong_answers + [correct_ans]
-        random.shuffle(options)
+        # Check if we have already generated/shuffled options for this question
+        if self.shuffled_options[self.current_question_idx] is None:
+            # First time visiting this question: generate and shuffle
+            options = wrong_answers + [correct_ans]
+            random.shuffle(options)
+            self.shuffled_options[self.current_question_idx] = options
+        else:
+            # Revisiting: use the stored order
+            options = self.shuffled_options[self.current_question_idx]
 
         q_len = len(question_text)
         q_size = 15
@@ -173,13 +167,15 @@ class Ui_main_window:
         for option in options:
             self._add_mc_button(option)
             
-        # If question already answered, show explain and disable submit
+        # If question already answered, show explain, disable submit, and apply colors
         if prev_ans:
-            self.submit_btn.config(state='disabled', bg='#94a3b8')
             # Inject Explain button between Submit and Next
             self.next_btn.pack_forget()
             self.explain_btn.pack(side='left', padx=10)
             self.next_btn.pack(side='left', padx=10)
+            
+            # Apply visual feedback (colors + disabled state)
+            self.apply_visual_feedback(prev_ans, correct_ans)
 
     def _add_mc_button(self, option):
         opt_len = len(option)
@@ -220,18 +216,40 @@ class Ui_main_window:
         q = self.display_questions[self.current_question_idx]
         _, correct_ans, _, _ = q
 
-        self.feedback_label.place(relx=0.5, rely=0.88, anchor='s')
-        if user_ans == correct_ans:
-            self.feedback_var.set('✓ Correct! Well done!')
-            self.feedback_label.config(fg='#10b981')
-        else:
-            self.feedback_var.set(f'✗ Incorrect! Correct answer: {correct_ans}')
-            self.feedback_label.config(fg='#ef4444')
-            
         # Show Explain Button and ensure it is before Next
         self.next_btn.pack_forget()
         self.explain_btn.pack(side='left', padx=10)
         self.next_btn.pack(side='left', padx=10)
+        
+        # Disable buttons and highlight answers
+        self.apply_visual_feedback(user_ans, correct_ans)
+
+    def apply_visual_feedback(self, user_ans, correct_ans):
+        """Disables controls and highlights correct/wrong answers"""
+        self.submit_btn.config(state='disabled', bg='#94a3b8')
+        
+        for btn in self.mc_buttons:
+            val = btn.cget('value')
+            btn.config(state='disabled')
+            
+            # Logic for coloring
+            if val == correct_ans:
+                # Correct answer: Green
+                btn.config(
+                    bg='#059669',             # Green background
+                    selectcolor='#059669',    # Green when selected
+                    disabledforeground='white'
+                )
+            elif val == user_ans and user_ans != correct_ans:
+                # User's wrong answer: Red
+                btn.config(
+                    bg='#dc2626',             # Red background
+                    selectcolor='#dc2626',    # Red when selected
+                    disabledforeground='white'
+                )
+            else:
+                # Other options: Standard disabled look
+                btn.config(disabledforeground='#94a3b8')
 
     def show_explanation(self):
         if not self.display_questions:
