@@ -23,7 +23,7 @@ if __name__ == '__main__':
     # 2️⃣ Generate Multiple Choice Questions
     q_gen = QuestionGenerator(resources_path)
     questions_mc = []
-    for _ in range(5):
+    for _ in range(10):
         try:
             question, correct_ans, wrong_answers, explanation = q_gen.generate_random_question()
             questions_mc.append((question, correct_ans, wrong_answers, explanation))
