@@ -35,17 +35,23 @@ class QuestionGenerator:
             "Backtracking with Forward Checking"
         ]
 
-    def generate_random_question(self):
-        category = random.choice(['strategy_simulation', 'nash_equilibrium', 'csp_evaluation', 'minmax_evaluation'])
+    def generate_random_question(self, specific_category=None):
+            if specific_category:
+                category = specific_category
+            else:
+                category = random.choice(
+                    ['strategy_simulation', 'nash_equilibrium', 'csp_evaluation', 'minmax_evaluation'])
 
-        if category == 'strategy_simulation':
-            return self._gen_strategy()
-        elif category == 'nash_equilibrium':
-            return self._gen_nash()
-        elif category == 'csp_evaluation':
-            return self._gen_csp()
-        elif category == 'minmax_evaluation':
-            return self._gen_minmax()
+            if category == 'strategy_simulation':
+                return self._gen_strategy()
+            elif category == 'nash_equilibrium':
+                return self._gen_nash()
+            elif category == 'csp_evaluation':
+                return self._gen_csp()
+            elif category == 'minmax_evaluation':
+                return self._gen_minmax()
+            else:
+                return self._gen_strategy()
 
 
     def _gen_minmax(self):
@@ -134,7 +140,7 @@ class QuestionGenerator:
 
         wrong_list = list(wrong_answers)
 
-        return raw_text.format(instance_details=instance_details), correct_ans, wrong_list[:3], explanation
+        return raw_text.format(instance_details=instance_details), correct_ans, list(wrong_list)[:3], explanation
 
     def generate_problem_instance(self, problem):
         # Now returns 3 values: instance_str, winner, explanation
@@ -367,10 +373,11 @@ class QuestionGenerator:
         number_of_nodes = random.randint(1, 10)
         number_of_colors = random.randint(1, len(colors))
 
-        nodes_used = set()
-
+        nodes_used_set = set()
         for i in range(number_of_nodes):
-            nodes_used.add(chr(ord('A') + i))
+            nodes_used_set.add(chr(ord('A') + i))
+
+        nodes_used = sorted(list(nodes_used_set))
 
         colors_used = set()
         while len(colors_used) < number_of_colors:
@@ -379,6 +386,7 @@ class QuestionGenerator:
 
         edges = []
         adjacency = {n: [] for n in nodes_used}
+
         for i in range(len(nodes_used)):
             for j in range(i + 1, len(nodes_used)):
                 if random.random() > 0.5:
